@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coupon-redis
+  namespace: coupon
+  labels:
+    app: coupon-redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: coupon-redis
+  template:
+    metadata:
+      labels:
+        app: coupon-redis
+    spec:
+      containers:
+        - name: coupon-redis
+          image: redis:alpine
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 6379
+          env:
+            - name: TZ
+              value: Asia/Seoul

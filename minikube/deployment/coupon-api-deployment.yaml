@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coupon-api
+  namespace: coupon
+  labels:
+    app: coupon-api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: coupon-api
+  template:
+    metadata:
+      labels:
+        app: coupon-api
+    spec:
+      containers:
+        - name: coupon-api
+          image: wlghks0314/coupon-api-server:0.1.0
+          ports:
+            - containerPort: 8080
+          env:
+            - name: TZ
+              value: Asia/Seoul
+            - name: R2DBC_HOST
+              value: coupon-mysql
+            - name: R2DBC_PORT
+              value: "3306"
+            - name: R2DBC_USERNAME
+              value: root
+            - name: R2DBC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: coupon-api-secret
+                  key: DATABASE_PASSWORD
+            - name: REDIS_HOST
+              value: coupon-redis
+            - name: REDIS_PORT
+              value: "6379"
+            - name: R2DBC_LOGGING_LEVEL
+              value: DEBUG

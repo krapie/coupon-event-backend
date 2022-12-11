@@ -1,0 +1,13 @@
+spring:
+  r2dbc:
+    url: r2dbc:pool:mysql://${R2DBC_HOST:localhost}:${R2DBC_PORT:3307}/coupon
+    username: ${R2DBC_USERNAME:root}
+    password: ${R2DBC_PASSWORD:krapi0314}
+
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+
+logging:
+  level:
+    org.springframework.r2dbc.core: ${R2DBC_LOGGING_LEVEL:DEBUG}

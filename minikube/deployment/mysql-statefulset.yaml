@@ -1,0 +1,103 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: coupon-mysql
+  namespace: coupon
+  labels:
+    app: coupon-mysql
+spec:
+  replicas: 1
+  serviceName: coupon-mysql
+  selector:
+    matchLabels:
+      app: coupon-mysql
+  template:
+    metadata:
+      labels:
+        app: coupon-mysql
+    spec:
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: coupon-mysql
+          image: mysql/mysql-server:5.7
+          imagePullPolicy: Always
+          args:
+            - "--ignore-db-dir=lost+found"
+          ports:
+            - containerPort: 3306
+          env:
+            - name: TZ
+              value: Asia/Seoul
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: coupon-api-secret
+                  key: DATABASE_PASSWORD
+            - name: MYSQL_DATABASE
+              value: "coupon"
+            - name: MYSQL_ROOT_HOST
+              value: "%"
+          volumeMounts:
+            - name: mysql-persistent-storage
+              mountPath: /var/lib/mysql
+            - name: mysql-initdb
+              mountPath: /docker-entrypoint-initdb.d
+      volumes:
+        - name: mysql-initdb
+          configMap:
+            name: mysql-initdb-config
+  volumeClaimTemplates:
+    - metadata:
+        name: mysql-persistent-storage
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: standard
+        resources:
+          requests:
+            storage: 1Gi
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: mysql-initdb-config
+data:
+  initdb.sql: |
+    CREATE SCHEMA IF NOT EXISTS `coupon` DEFAULT CHARACTER SET utf8 ;
+
+    USE `coupon` ;
+
+    CREATE TABLE IF NOT EXISTS `coupon`.`coupon` (
+        `coupon_code` VARCHAR(100) NOT NULL,
+        `name` VARCHAR(100) NOT NULL,
+        `discount_value` INT NOT NULL,
+        `total_amount` INT NULL,
+        `max_amount_per_user` INT NULL,
+        `left_amount` INT NULL,
+        `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (`coupon_code`))
+        ENGINE = InnoDB;
+
+    CREATE TABLE IF NOT EXISTS `coupon`.`coupon_wallet` (
+                                                            `coupon_wallet_id` BIGINT NOT NULL AUTO_INCREMENT,
+                                                            `coupon_wallet_uuid` VARCHAR(36) NOT NULL,
+        `coupon_code` VARCHAR(100) NOT NULL,
+        `user_id` VARCHAR(36) NOT NULL,
+        `issued_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        `is_used` TINYINT(1) NOT NULL DEFAULT 0,
+        `used_at` TIMESTAMP NULL,
+        `expired_at` TIMESTAMP NULL,
+        `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        INDEX `fk_coupon_wallet_coupon_idx` (`coupon_code` ASC),
+        PRIMARY KEY (`coupon_wallet_id`),
+        CONSTRAINT `fk_coupon_wallet_coupon`
+        FOREIGN KEY (`coupon_code`)
+        REFERENCES `coupon`.`coupon` (`coupon_code`)
+        ON DELETE NO ACTION
+        ON UPDATE NO ACTION)
+        ENGINE = InnoDB;
+
+    INSERT INTO coupon(coupon_code, name, discount_value, total_amount, max_amount_per_user, created_at, updated_at) VALUES ('A0001', '스테이크 할인', 10000, 300, 1, now(), now());
+    INSERT INTO coupon(coupon_code, name, discount_value, total_amount, max_amount_per_user, created_at, updated_at) VALUES ('B0001', '햄버거 할인', 5000, 2000, 1, now(), now());
+    INSERT INTO coupon(coupon_code, name, discount_value, total_amount, max_amount_per_user, created_at, updated_at) VALUES ('C0001', '커피 할인', 1000, 10000, 1, now(), now());
