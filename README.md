@@ -50,7 +50,7 @@
 
 ```bash
 # 1. GitHub 복제
-git clone https://github.com/Krapi0314/coupon-event-backend.git
+git clone https://github.com/krapie/coupon-event-backend.git
 
 # 2. 레포지토리로 디렉토리 변경
 cd coupon-event-api-backend
